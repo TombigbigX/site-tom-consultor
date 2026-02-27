@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tom Consultor — Automação, IA & Marketing Digital</title>
+    <meta name="description" content="Automação inteligente, gestão de tráfego, redes sociais, SEO/AEO e design para empresas de alto ticket.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --cyan: #00d4ff;
+            --cyan-glow: rgba(0, 212, 255, 0.3);
+            --dark: #0a0e17;
+            --dark-card: #111827;
+            --dark-lighter: #1a1f2e;
+            --text-primary: #ffffff;
+            --text-secondary: #c8d6e5;
+            --gradient-cyan: linear-gradient(135deg, #00d4ff, #0099cc);
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+        html { overflow-x: hidden; }
+        body { font-family: var(--font-body); background: var(--dark); color: var(--text-primary); overflow-x: hidden; }
+
+        /* LOADER */
+        #loader {
+            position: fixed; inset: 0; background: var(--dark);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; transition: opacity 0.8s ease;
+        }
+        #loader.hidden { opacity: 0; pointer-events: none; }
+        #loader .logo-text { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--cyan); margin-bottom: 2rem; }
+        .loader-bar { width: 200px; height: 3px; background: var(--dark-lighter); border-radius: 3px; overflow: hidden; }
+        .loader-bar-fill { height: 100%; background: var(--gradient-cyan); width: 0%; transition: width 0.3s; border-radius: 3px; }
+
+        /* NAV */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+            background: rgba(10, 14, 23, 0.85); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            transform: translateY(0); transition: transform 0.3s;
+        }
+        nav.hide { transform: translateY(-100%); }
+        .nav-logo { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; }
+        .nav-logo span { color: var(--cyan); }
+        .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: color 0.3s; cursor: pointer; white-space: nowrap; }
+        .nav-links a:hover { color: var(--cyan); }
+        .nav-cta {
+            background: var(--gradient-cyan); color: var(--dark); padding: 0.6rem 1.5rem;
+            border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 0.85rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .nav-cta:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--cyan-glow); }
+        .nav-toggle { display: none; background: none; border: none; cursor: pointer; flex-direction: column; gap: 5px; }
+        .nav-toggle span { display: block; width: 24px; height: 2px; background: var(--text-primary); }
+
+        /* SCROLL SECTIONS - Each section is a trigger zone */
+        .frame-section {
+            height: 400vh;
+            position: relative;
+        }
+        @media (max-width: 768px) {
+            .frame-section { height: 300vh; }
+        }
+
+        /* FIXED CANVAS */
+        .frame-canvas-wrap {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            pointer-events: none;
+        }
+        .frame-canvas-wrap.active { opacity: 1; }
+        .frame-canvas-wrap canvas { width: 100%; height: 100%; display: block; }
+
+        /* OVERLAY on top of canvas - stronger for legibility */
+        .frame-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 1; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+        }
+        .frame-overlay.active { opacity: 1; }
+        .overlay-left {
+            background: linear-gradient(to right, rgba(10,14,23,0.92) 0%, rgba(10,14,23,0.6) 45%, rgba(10,14,23,0.08) 100%);
+        }
+        .overlay-right {
+            background: linear-gradient(to left, rgba(10,14,23,0.92) 0%, rgba(10,14,23,0.6) 45%, rgba(10,14,23,0.08) 100%);
+        }
+        .overlay-center {
+            background: rgba(10,14,23,0.75);
+        }
+
+        /* CONTENT BLOCKS */
+        .frame-content {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 2; display: flex; align-items: center; padding: 0 6%;
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+        .frame-content.active { opacity: 1; }
+        .frame-content > * { pointer-events: auto; }
+
+        .content-block {
+            max-width: 580px; transform: translateY(30px); transition: transform 0.8s ease;
+        }
+        .frame-content.active .content-block { transform: translateY(0); }
+        .content-right { margin-left: auto; }
+        .content-center { margin: 0 auto; text-align: center; }
+
+        .tag {
+            display: inline-block; font-family: var(--font-display);
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 3px;
+            color: var(--cyan); background: rgba(0,212,255,0.15);
+            border: 1px solid rgba(0,212,255,0.35); padding: 0.4rem 1rem;
+            border-radius: 50px; margin-bottom: 1.5rem;
+            backdrop-filter: blur(5px);
+        }
+        .content-block h1, .content-block h2 {
+            font-family: var(--font-display); font-weight: 800; line-height: 1.1; margin-bottom: 1.2rem;
+            color: #ffffff;
+            text-shadow: 0 0 30px rgba(0,0,0,0.95), 0 0 60px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.9);
+        }
+        .content-block h1 { font-size: clamp(2.5rem, 5vw, 3.8rem); }
+        .content-block h2 { font-size: clamp(2rem, 4vw, 3rem); }
+        .highlight {
+            color: var(--cyan);
+            text-shadow: 0 0 40px var(--cyan-glow), 0 0 80px var(--cyan-glow), 0 2px 4px rgba(0,0,0,1);
+        }
+
+        .content-block p {
+            font-size: 1.05rem; line-height: 1.7; color: #e2eaf3; margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(0,0,0,0.95), 0 0 40px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,1);
+        }
+
+        .cta-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: var(--gradient-cyan); color: var(--dark);
+            padding: 0.9rem 1.8rem; border-radius: 50px; text-decoration: none;
+            font-weight: 700; font-size: 0.95rem; border: none; cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 20px rgba(0,212,255,0.3);
+        }
+        .cta-btn:hover { transform: scale(1.05); box-shadow: 0 0 40px var(--cyan-glow); }
+        .cta-btn svg { width: 18px; height: 18px; }
+        .cta-secondary {
+            background: rgba(0,212,255,0.15); color: var(--cyan); border: 2px solid rgba(0,212,255,0.5);
+            margin-left: 0.8rem; box-shadow: none;
+            backdrop-filter: blur(5px);
+        }
+        .cta-secondary:hover { background: rgba(0,212,255,0.25); }
+
+        .floating-stats { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
+        .stat-card {
+            background: rgba(10,14,23,0.75); backdrop-filter: blur(12px);
+            border: 1px solid rgba(0,212,255,0.2); border-radius: 14px;
+            padding: 1rem 1.3rem; min-width: 120px;
+        }
+        .stat-card .number { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; color: var(--cyan); text-shadow: 0 0 20px var(--cyan-glow); }
+        .stat-card .label { font-size: 0.78rem; color: #b8c9db; margin-top: 0.2rem; }
+
+        /* SERVICES */
+        .services-section {
+            position: relative; z-index: 3;
+            padding: 8rem 5%; background: var(--dark);
+        }
+        .services-section::before {
+            content: ''; position: absolute; top: -120px; left: 0; right: 0;
+            height: 120px; background: linear-gradient(to bottom, transparent, var(--dark));
+            pointer-events: none; z-index: 4;
+        }
+        .services-section::after {
+            content: ''; position: absolute; bottom: -120px; left: 0; right: 0;
+            height: 120px; background: linear-gradient(to top, transparent, var(--dark));
+            pointer-events: none; z-index: 4;
+        }
+        .services-section .section-line {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 1px; height: 80px; background: linear-gradient(to bottom, var(--cyan), transparent);
+        }
+        .section-header { text-align: center; margin-bottom: 4rem; }
+        .section-header .tag { margin-bottom: 1.5rem; }
+        .section-header h2 { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; margin-bottom: 1rem; text-shadow: none; }
+        .section-header p { color: var(--text-secondary); font-size: 1.05rem; max-width: 580px; margin: 0 auto; text-shadow: none; }
+
+        .services-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem; max-width: 1100px; margin: 0 auto;
+        }
+        .service-card {
+            background: var(--dark-card); border: 1px solid rgba(0,212,255,0.08);
+            border-radius: 18px; padding: 2rem;
+            transition: transform 0.4s, border-color 0.4s, box-shadow 0.4s;
+            opacity: 0; transform: translateY(30px);
+        }
+        .service-card.vis { opacity: 1; transform: translateY(0); transition-delay: calc(var(--i,0) * 0.08s); }
+        .service-card:hover { transform: translateY(-6px); border-color: rgba(0,212,255,0.3); box-shadow: 0 20px 50px rgba(0,212,255,0.08); }
+        .service-icon {
+            width: 52px; height: 52px; background: rgba(0,212,255,0.1); border-radius: 13px;
+            display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; color: var(--cyan);
+        }
+        .service-icon svg { width: 26px; height: 26px; }
+        .service-card h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; margin-bottom: 0.7rem; }
+        .service-card p { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6; }
+
+        /* SCROLL DOTS */
+        .scroll-dots {
+            position: fixed; right: 1.5rem; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 0.8rem; z-index: 50;
+        }
+        .dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            border: 2px solid rgba(0,212,255,0.3); background: transparent;
+            transition: 0.3s; cursor: pointer;
+        }
+        .dot.active { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+
+        /* FOOTER */
+        footer {
+            position: relative; z-index: 3;
+            background: var(--dark-card); border-top: 1px solid rgba(0,212,255,0.1);
+            padding: 4rem 5% 2rem;
+        }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; max-width: 1100px; margin: 0 auto 3rem; }
+        .footer-brand .nav-logo { font-size: 1.5rem; margin-bottom: 1rem; display: block; }
+        .footer-brand p { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6; max-width: 340px; }
+        .footer-col h4 { font-family: var(--font-display); font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--cyan); margin-bottom: 1rem; }
+        .footer-col ul { list-style: none; }
+        .footer-col li { margin-bottom: 0.5rem; }
+        .footer-col a { color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; transition: color 0.3s; }
+        .footer-col a:hover { color: var(--cyan); }
+        .footer-bottom { text-align: center; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.05); color: var(--text-secondary); font-size: 0.82rem; }
+
+        /* RESPONSIVE - Tablet */
+        @media (max-width: 1024px) {
+            .nav-links { gap: 1rem; }
+            .nav-links a { font-size: 0.8rem; }
+            .nav-cta { font-size: 0.8rem; padding: 0.5rem 1.2rem; }
+            .content-block { max-width: 480px; }
+            .content-block h1 { font-size: clamp(2rem, 4.5vw, 3rem); }
+            .content-block h2 { font-size: clamp(1.8rem, 3.5vw, 2.5rem); }
+            .content-block p { font-size: 0.95rem; }
+        }
+
+        /* RESPONSIVE - Mobile */
+        @media (max-width: 768px) {
+            .nav-links, .nav-cta { display: none; }
+            .nav-toggle { display: flex; }
+            nav { padding: 0.8rem 1.2rem; }
+            .nav-logo { font-size: 1.2rem; }
+            .nav-links.open {
+                display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0;
+                background: rgba(10,14,23,0.97); backdrop-filter: blur(20px); padding: 1.5rem 2rem;
+                gap: 0.8rem; border-bottom: 1px solid rgba(0,212,255,0.15);
+            }
+            .nav-links.open a { font-size: 1rem; padding: 0.4rem 0; }
+            .scroll-dots { display: none; }
+
+            /* Content positioning for mobile — hero at bottom, others centered */
+            .frame-content {
+                padding: 0 7%; align-items: center;
+            }
+            /* Hero only: push to bottom to show more animation */
+            #fc0 { align-items: flex-end; padding-bottom: 5vh; }
+            .content-block { max-width: 100%; }
+            .content-right { margin-left: 0; }
+            .content-center { margin: 0; text-align: left; }
+
+            .content-block h1 { font-size: 1.9rem; line-height: 1.15; margin-bottom: 0.7rem; }
+            .content-block h2 { font-size: 1.6rem; line-height: 1.15; margin-bottom: 0.7rem; }
+            .content-block p { font-size: 0.9rem; line-height: 1.55; margin-bottom: 1rem; }
+            .tag { font-size: 0.65rem; letter-spacing: 2px; padding: 0.3rem 0.8rem; margin-bottom: 0.8rem; }
+
+            /* Buttons — full width for easier touch */
+            .cta-btn {
+                font-size: 0.9rem; padding: 0.85rem 1.5rem;
+                display: flex; justify-content: center; width: 100%;
+            }
+            .cta-secondary {
+                margin-left: 0; margin-top: 0.5rem;
+                display: flex; justify-content: center; width: 100%;
+            }
+
+            /* Stats smaller on mobile */
+            .floating-stats { gap: 0.5rem; margin-top: 1rem; }
+            .stat-card { min-width: 0; flex: 1; padding: 0.6rem 0.7rem; text-align: center; }
+            .stat-card .number { font-size: 1.15rem; }
+            .stat-card .label { font-size: 0.68rem; }
+
+            /* Overlays — general darkening for mobile since text is centered */
+            .overlay-left, .overlay-right {
+                background: rgba(10,14,23,0.55) !important;
+            }
+            .overlay-center {
+                background: rgba(10,14,23,0.7) !important;
+            }
+            /* Hero overlay: bottom gradient since hero text sits at bottom */
+            #ov0 {
+                background: linear-gradient(to top, rgba(10,14,23,0.95) 0%, rgba(10,14,23,0.6) 40%, rgba(10,14,23,0.1) 70%, transparent 100%) !important;
+            }
+
+            /* Services section mobile */
+            .services-section { padding: 3.5rem 5%; }
+            .services-section::before { height: 80px; top: -80px; }
+            .services-section::after { height: 80px; bottom: -80px; }
+            .section-header { margin-bottom: 2rem; }
+            .section-header h2 { font-size: 1.5rem; }
+            .section-header p { font-size: 0.88rem; }
+            .services-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+            .service-card { padding: 1.3rem; border-radius: 14px; }
+            .service-icon { width: 44px; height: 44px; border-radius: 11px; margin-bottom: 0.7rem; }
+            .service-icon svg { width: 22px; height: 22px; }
+            .service-card h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+            .service-card p { font-size: 0.83rem; line-height: 1.5; }
+
+            /* Footer mobile */
+            .footer-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+            footer { padding: 2.5rem 5% 1.5rem; }
+            .footer-brand p { font-size: 0.85rem; }
+            .footer-col a { font-size: 0.85rem; }
+            .footer-bottom { font-size: 0.75rem; }
+        }
+
+        @media (max-width: 400px) {
+            .content-block h1 { font-size: 1.6rem; }
+            .content-block h2 { font-size: 1.35rem; }
+            .content-block p { font-size: 0.85rem; }
+            .cta-btn { font-size: 0.85rem; padding: 0.75rem 1.2rem; }
+            .stat-card .number { font-size: 1rem; }
+            .frame-content { padding: 0 5%; padding-bottom: 4vh; }
+        }
+
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 20px var(--cyan-glow); } 50% { box-shadow: 0 0 40px var(--cyan-glow); } }
+    </style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+    <div class="logo-text">Tom<span>.</span>Consultor</div>
+    <div class="loader-bar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+</div>
+
+<!-- NAV -->
+<nav id="navbar">
+    <div class="nav-logo">Tom<span>.</span>Consultor</div>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="navLinks">
+        <li><a data-nav="sec0">Início</a></li>
+        <li><a data-nav="servicos">Serviços</a></li>
+        <li><a data-nav="sec1">Automação</a></li>
+        <li><a data-nav="sec3">Resultados</a></li>
+        <li><a data-nav="sec4">Contato</a></li>
+    </ul>
+    <a href="https://wa.me/5511966251372?text=Ol%C3%A1%20Tom%2C%20vim%20pelo%20seu%20site%20e%20gostaria%20de%20saber%20mais%20sobre%20seus%20servi%C3%A7os." class="nav-cta" target="_blank">Fale Comigo</a>
+</nav>
+
+<!-- SCROLL DOTS -->
+<div class="scroll-dots" id="dots">
+    <div class="dot active" data-i="0"></div>
+    <div class="dot" data-i="1"></div>
+    <div class="dot" data-i="2"></div>
+    <div class="dot" data-i="3"></div>
+    <div class="dot" data-i="4"></div>
+</div>
+
+<!-- FIXED CANVASES -->
+<div class="frame-canvas-wrap active" id="cw0"><canvas id="c0"></canvas></div>
+<div class="frame-canvas-wrap" id="cw1"><canvas id="c1"></canvas></div>
+<div class="frame-canvas-wrap" id="cw2"><canvas id="c2"></canvas></div>
+<div class="frame-canvas-wrap" id="cw3"><canvas id="c3"></canvas></div>
+<div class="frame-canvas-wrap" id="cw4"><canvas id="c4"></canvas></div>
+
+<!-- FIXED OVERLAYS -->
+<div class="frame-overlay overlay-left active" id="ov0"></div>
+<div class="frame-overlay overlay-right" id="ov1"></div>
+<div class="frame-overlay overlay-left" id="ov2"></div>
+<div class="frame-overlay overlay-right" id="ov3"></div>
+<div class="frame-overlay overlay-center" id="ov4"></div>
+
+<!-- FIXED CONTENT BLOCKS -->
+<div class="frame-content active" id="fc0">
+    <div class="content-block">
+        <div class="tag">Tom Consultor</div>
+        <h1>Automação <span class="highlight">inteligente</span> para empresas que pensam grande</h1>
+        <p>Transformo processos repetitivos em ecossistemas automatizados com IA. Do atendimento no WhatsApp ao marketing completo.</p>
+        <div>
+            <a href="https://wa.me/5511966251372?text=Ol%C3%A1%20Tom%2C%20quero%20agendar%20uma%20consultoria%20sobre%20automa%C3%A7%C3%A3o%20e%20marketing%20digital." class="cta-btn" target="_blank">
+                Agendar Consultoria
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a data-nav="servicos" class="cta-btn cta-secondary" style="cursor:pointer">Ver Serviços</a>
+        </div>
+        <div class="floating-stats">
+            <div class="stat-card"><div class="number">+50</div><div class="label">Automações criadas</div></div>
+            <div class="stat-card"><div class="number">98%</div><div class="label">Satisfação</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="frame-content" id="fc1">
+    <div class="content-block content-right">
+        <div class="tag">Automação & IA</div>
+        <h2>Seu atendimento no <span class="highlight">WhatsApp</span> 24h por dia</h2>
+        <p>Chatbots inteligentes que qualificam leads, agendam reuniões e respondem dúvidas — enquanto você foca no que importa.</p>
+        <div class="floating-stats">
+            <div class="stat-card"><div class="number">24/7</div><div class="label">Atendimento ativo</div></div>
+            <div class="stat-card"><div class="number">3x</div><div class="label">Mais conversões</div></div>
+            <div class="stat-card"><div class="number">-80%</div><div class="label">Tempo manual</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="frame-content" id="fc2">
+    <div class="content-block">
+        <div class="tag">Processos Inteligentes</div>
+        <h2>IA trabalhando <span class="highlight">junto</span> com sua equipe</h2>
+        <p>Automações que eliminam o trabalho repetitivo e liberam sua equipe para o que realmente gera valor ao negócio.</p>
+        <div class="floating-stats">
+            <div class="stat-card"><div class="number">10h+</div><div class="label">Economizadas/semana</div></div>
+            <div class="stat-card"><div class="number">100%</div><div class="label">Personalizado</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="frame-content" id="fc3">
+    <div class="content-block content-right">
+        <div class="tag">Resultados Reais</div>
+        <h2>Dados que <span class="highlight">provam</span> o impacto</h2>
+        <p>Rastreamento avançado com GTM Server-Side, GA4 e API de Conversões. Cada real investido é mensurado e otimizado.</p>
+        <div class="floating-stats">
+            <div class="stat-card"><div class="number">+300%</div><div class="label">ROI médio</div></div>
+            <div class="stat-card"><div class="number">5x</div><div class="label">Mais leads</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="frame-content" id="fc4">
+    <div class="content-block content-center">
+        <div class="tag">Vamos Conversar</div>
+        <h2>Pronto para <span class="highlight">automatizar</span> seu negócio?</h2>
+        <p>Agende uma consultoria gratuita e descubra como posso transformar seus processos com automação e IA.</p>
+        <a href="https://wa.me/5511966251372?text=Ol%C3%A1%20Tom%2C%20quero%20agendar%20uma%20consultoria%20gratuita%20para%20meu%20neg%C3%B3cio." class="cta-btn" target="_blank" style="animation: pulse 2s infinite;">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 0 0 .612.616l4.543-1.468A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.336 0-4.51-.766-6.26-2.064l-.438-.34-2.695.871.896-2.645-.372-.468A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+            Chamar no WhatsApp
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+    </div>
+</div>
+
+<!-- SCROLL TRIGGER ZONES -->
+<div class="frame-section" id="sec0"></div>
+<div class="frame-section" id="sec1"></div>
+
+<!-- SERVICES -->
+<section class="services-section" id="servicos">
+    <div class="section-line"></div>
+    <div class="section-header">
+        <div class="tag">O que eu faço</div>
+        <h2>Soluções <span class="highlight">completas</span> para seu negócio</h2>
+        <p>Do tráfego pago à automação — um ecossistema digital integrado que gera resultados reais.</p>
+    </div>
+    <div class="services-grid">
+        <div class="service-card" style="--i:0">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <h3>Automação WhatsApp</h3>
+            <p>Chatbots com IA que atendem, qualificam e convertem leads automaticamente. Integração com CRM e funis de vendas.</p>
+        </div>
+        <div class="service-card" style="--i:1">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+            <h3>Ecossistemas Automatizados</h3>
+            <p>Automação completa de processos repetitivos — do lead ao pós-venda. Fluxos inteligentes que economizam horas.</p>
+        </div>
+        <div class="service-card" style="--i:2">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <h3>Gestão de Tráfego</h3>
+            <p>Campanhas no Meta Ads e Google Ads com rastreamento avançado. ROI otimizado com dados reais de conversão.</p>
+        </div>
+        <div class="service-card" style="--i:3">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98"/><path d="M15.41 6.51l-6.82 3.98"/></svg></div>
+            <h3>Redes Sociais</h3>
+            <p>Estratégia de conteúdo, planejamento e gestão para construir autoridade e atrair clientes qualificados.</p>
+        </div>
+        <div class="service-card" style="--i:4">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+            <h3>SEO & AEO</h3>
+            <p>Posicionamento orgânico no Google e otimização para mecanismos de IA. Apareça onde seus clientes buscam.</p>
+        </div>
+        <div class="service-card" style="--i:5">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+            <h3>Design & Vídeo</h3>
+            <p>Artes para redes sociais, criativos para anúncios e edição de vídeo profissional que engaja e converte.</p>
+        </div>
+    </div>
+    <div style="text-align:center; margin-top:3.5rem;">
+        <a href="https://wa.me/5511966251372?text=Ol%C3%A1%20Tom%2C%20vi%20seus%20servi%C3%A7os%20no%20site%20e%20quero%20entender%20qual%20%C3%A9%20o%20melhor%20para%20minha%20empresa." class="cta-btn" target="_blank">
+            Quero saber mais
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+    </div>
+</section>
+
+<!-- More scroll trigger zones -->
+<div class="frame-section" id="sec2"></div>
+<div class="frame-section" id="sec3"></div>
+<div class="frame-section" id="sec4"></div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <span class="nav-logo">Tom<span>.</span>Consultor</span>
+            <p>Especialista em automação com IA, marketing digital e ecossistemas tecnológicos para empresas que querem escalar.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Serviços</h4>
+            <ul>
+                <li><a href="#sec1">Automação WhatsApp</a></li>
+                <li><a href="#servicos">Gestão de Tráfego</a></li>
+                <li><a href="#servicos">SEO & AEO</a></li>
+                <li><a href="#servicos">Design & Vídeo</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Contato</h4>
+            <ul>
+                <li><a href="https://wa.me/5511966251372?text=Ol%C3%A1%20Tom%2C%20vim%20pelo%20seu%20site%20e%20gostaria%20de%20conversar." target="_blank">WhatsApp</a></li>
+                <li><a href="mailto:tomcrconsultor@gmail.com">E-mail</a></li>
+                <li><a href="https://instagram.com/tomconsultor" target="_blank">Instagram</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">&copy; 2026 Tom Consultor — Todos os direitos reservados.</div>
+</footer>
+
+<script>
+(function() {
+    'use strict';
+
+    const MOBILE_BP = 768;
+    const isMobile = () => window.innerWidth <= MOBILE_BP;
+    const startedMobile = isMobile();
+
+    const SECS_DESKTOP = [
+        { folder: 'frames/section1/', count: 300, ext: '.webp' },
+        { folder: 'frames/section2/', count: 300, ext: '.webp' },
+        { folder: 'frames/section3/', count: 300, ext: '.webp' },
+        { folder: 'frames/section4/', count: 300, ext: '.webp' },
+        { folder: 'frames/section5/', count: 273, ext: '.webp' },
+    ];
+    const SECS_MOBILE = [
+        { folder: 'frames/mobile01/', count: 300, ext: '_delay-0.033s.webp' },
+        { folder: 'frames/mobile02/', count: 300, ext: '_delay-0.033s.webp' },
+        { folder: 'frames/mobile03/', count: 300, ext: '_delay-0.033s.webp' },
+        { folder: 'frames/mobile04/', count: 300, ext: '_delay-0.033s.webp' },
+        { folder: 'frames/mobile05/', count: 273, ext: '_delay-0.033s.webp' },
+    ];
+
+    const SECS = startedMobile ? SECS_MOBILE : SECS_DESKTOP;
+    const totalFrames = SECS.reduce((s, x) => s + x.count, 0);
+    let loaded = 0;
+    const data = [];
+
+    // Canvas dimensions match viewport for crisp rendering without distortion
+    function getCanvasSize() {
+        // Use device pixel ratio for sharpness, but cap at 2x for performance
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        return {
+            w: Math.round(window.innerWidth * dpr),
+            h: Math.round(window.innerHeight * dpr)
+        };
+    }
+
+    // Cover draw — crops image to fill canvas (like object-fit: cover)
+    function drawCover(ctx, img, cw, ch) {
+        const iw = img.naturalWidth, ih = img.naturalHeight;
+        const ir = iw / ih, cr = cw / ch;
+        let sx, sy, sw, sh;
+        if (cr > ir) { sw = iw; sh = iw / cr; sx = 0; sy = (ih - sh) / 2; }
+        else { sh = ih; sw = ih * cr; sx = (iw - sw) / 2; sy = 0; }
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
+    }
+
+    // Resize all canvases to match current viewport
+    function resizeCanvases() {
+        const size = getCanvasSize();
+        data.forEach(d => {
+            if (d.canvas.width !== size.w || d.canvas.height !== size.h) {
+                d.canvas.width = size.w;
+                d.canvas.height = size.h;
+            }
+        });
+        return size;
+    }
+
+    // Scroll to a section with offset so text is visible (~10% into the section)
+    function scrollToSection(sectionId) {
+        const el = document.getElementById(sectionId);
+        if (!el) return;
+        // Scroll to 10% into the section so text is showing
+        const sectionTop = el.offsetTop;
+        const sectionH = el.offsetHeight;
+        const vh = window.innerHeight;
+        // Target: text appears at ~3% progress, so scroll to ~8% for comfortable view
+        const offset = (sectionH - vh) * 0.08;
+        window.scrollTo({ top: sectionTop + offset, behavior: 'smooth' });
+    }
+
+    function init() {
+        const initSize = getCanvasSize();
+
+        SECS.forEach((sec, i) => {
+            const canvas = document.getElementById('c' + i);
+            const ctx = canvas.getContext('2d');
+            canvas.width = initSize.w;
+            canvas.height = initSize.h;
+            const images = [];
+
+            // Progressive loading
+            const priority = [];
+            const deferred = [];
+            for (let j = 0; j < sec.count; j++) {
+                if (j % 10 === 0 || j === 0) priority.push(j);
+                else deferred.push(j);
+            }
+            const loadOrder = [...priority, ...deferred];
+
+            for (let j = 0; j < sec.count; j++) {
+                images.push(null);
+            }
+
+            loadOrder.forEach(j => {
+                const img = new Image();
+                img.src = sec.folder + 'frame_' + String(j).padStart(3, '0') + sec.ext;
+                img.onload = () => {
+                    images[j] = img;
+                    loaded++;
+                    document.getElementById('loaderFill').style.width = (loaded / totalFrames * 100) + '%';
+                    if (j === 0) {
+                        const sz = getCanvasSize();
+                        drawCover(ctx, img, sz.w, sz.h);
+                    }
+                    if (loaded >= totalFrames) {
+                        setTimeout(() => { document.getElementById('loader').classList.add('hidden'); update(); }, 300);
+                    }
+                };
+            });
+
+            data.push({ canvas, ctx, images, count: sec.count });
+        });
+
+        window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+
+        // On resize: update canvas + detect breakpoint crossing to reload with correct frames
+        let wasMobile = startedMobile;
+        window.addEventListener('resize', () => {
+            const nowMobile = isMobile();
+            if (nowMobile !== wasMobile) {
+                // Crossed breakpoint — reload to load correct frame set
+                wasMobile = nowMobile;
+                location.reload();
+                return;
+            }
+            resizeCanvases();
+            update();
+        });
+
+        // Mobile nav toggle
+        document.getElementById('navToggle').addEventListener('click', () => {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+
+        // Nav links with smooth scroll to correct position
+        document.querySelectorAll('[data-nav]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = link.dataset.nav;
+                document.getElementById('navLinks').classList.remove('open');
+
+                if (target === 'sec0') {
+                    // Scroll to top for "Início"
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else if (target === 'servicos') {
+                    document.getElementById('servicos').scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    scrollToSection(target);
+                }
+            });
+        });
+
+        // Scroll dots
+        document.querySelectorAll('.dot').forEach(d => {
+            d.addEventListener('click', () => {
+                const idx = +d.dataset.i;
+                if (idx === 0) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    scrollToSection('sec' + idx);
+                }
+            });
+        });
+    }
+
+    let raf = null;
+    let lastNav = 0;
+
+    function update() {
+        raf = null;
+        const sections = document.querySelectorAll('.frame-section');
+        const scrollY = window.scrollY;
+        const vh = window.innerHeight;
+
+        let activeIdx = -1;
+        let activeProgress = 0;
+
+        const servicesEl = document.getElementById('servicos');
+        const servicesRect = servicesEl.getBoundingClientRect();
+        const inServices = servicesRect.top < vh && servicesRect.bottom > 0;
+
+        // Calculate how far into the services transition zone we are
+        // enterBlend: 0 = services not visible, 1 = fully in services
+        const transitionZone = vh * 0.4; // 40% of viewport for smooth blend
+        let enterBlend = 0;
+        let exitBlend = 0;
+        if (inServices) {
+            enterBlend = Math.min(1, Math.max(0, (vh - servicesRect.top) / transitionZone));
+            exitBlend = Math.min(1, Math.max(0, (servicesRect.bottom - vh) / transitionZone));
+        }
+
+        sections.forEach((sec, i) => {
+            const rect = sec.getBoundingClientRect();
+            const secH = sec.offsetHeight;
+
+            if (rect.top < vh && rect.bottom > 0) {
+                const progress = Math.max(0, Math.min(1, -rect.top / (secH - vh)));
+                if (activeIdx === -1 || rect.top < vh * 0.5) {
+                    activeIdx = i;
+                    activeProgress = progress;
+                }
+            }
+        });
+
+        // If at top of page (before any section starts scrolling), show section 0
+        if (activeIdx === -1 && scrollY < vh) {
+            activeIdx = 0;
+            activeProgress = 0;
+        }
+
+        const dataMap = [0, 1, 2, 3, 4];
+
+        for (let i = 0; i < 5; i++) {
+            const di = dataMap[i];
+            const cwEl = document.getElementById('cw' + di);
+            const ov = document.getElementById('ov' + di);
+            const fc = document.getElementById('fc' + di);
+
+            if (i === activeIdx) {
+                // During services transition, fade canvas smoothly
+                if (inServices) {
+                    // sec1 (index 1) fades out as we enter services
+                    // sec2 (index 2) fades in as we exit services
+                    if (i === 1) {
+                        const fadeOut = 1 - enterBlend;
+                        cwEl.style.opacity = fadeOut;
+                        ov.style.opacity = fadeOut;
+                        cwEl.classList.add('active');
+                        ov.classList.add('active');
+                        fc.classList.remove('active');
+                    } else if (i === 2) {
+                        const fadeIn = 1 - exitBlend;
+                        cwEl.style.opacity = fadeIn;
+                        ov.style.opacity = fadeIn;
+                        cwEl.classList.add('active');
+                        ov.classList.add('active');
+                        fc.classList.remove('active');
+                    } else {
+                        cwEl.classList.remove('active');
+                        ov.classList.remove('active');
+                        fc.classList.remove('active');
+                        cwEl.style.opacity = '';
+                        ov.style.opacity = '';
+                    }
+                } else {
+                    cwEl.style.opacity = '';
+                    ov.style.opacity = '';
+                    cwEl.classList.add('active');
+                    ov.classList.add('active');
+
+                    // Show content: from 0% (immediately) to 95%
+                    if (activeProgress < 0.95) {
+                        fc.classList.add('active');
+                    } else {
+                        fc.classList.remove('active');
+                    }
+                }
+
+                // Draw frame
+                const d = data[di];
+                if (d) {
+                    const fi = Math.min(Math.floor(activeProgress * d.count), d.count - 1);
+                    let img = d.images[fi];
+                    if (!img || !img.complete || !img.naturalWidth) {
+                        for (let delta = 1; delta < 20; delta++) {
+                            const prev = d.images[fi - delta];
+                            if (prev && prev.complete && prev.naturalWidth) { img = prev; break; }
+                            const next = d.images[fi + delta];
+                            if (next && next.complete && next.naturalWidth) { img = next; break; }
+                        }
+                    }
+                    if (img && img.complete && img.naturalWidth) {
+                        const cw = d.canvas.width, ch = d.canvas.height;
+                        d.ctx.clearRect(0, 0, cw, ch);
+                        drawCover(d.ctx, img, cw, ch);
+                    }
+                }
+            } else {
+                cwEl.classList.remove('active');
+                ov.classList.remove('active');
+                fc.classList.remove('active');
+                cwEl.style.opacity = '';
+                ov.style.opacity = '';
+            }
+        }
+
+        // Update dots
+        document.querySelectorAll('.dot').forEach((d, i) => {
+            d.classList.toggle('active', i === activeIdx);
+        });
+
+        // Animate service cards
+        document.querySelectorAll('.service-card').forEach(c => {
+            if (c.getBoundingClientRect().top < vh * 0.85) c.classList.add('vis');
+        });
+
+        // Nav show/hide
+        const nav = document.getElementById('navbar');
+        if (scrollY > lastNav + 50 && scrollY > 100) { nav.classList.add('hide'); lastNav = scrollY; }
+        else if (scrollY < lastNav - 30) { nav.classList.remove('hide'); lastNav = scrollY; }
+    }
+
+    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
+})();
+</script>
+</body>
+</html>
